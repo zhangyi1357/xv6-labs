@@ -31,7 +31,7 @@ void find(char *path, char *str) {
     }
     switch (st.type) {
         case T_FILE:
-            printf("%s %s\n", fmtname(path), str);
+            // printf("%s %s\n", fmtname(path), str);
             if (strcmp(fmtname(path), str) == 0) {
                 printf("%s\n", path);
             }
