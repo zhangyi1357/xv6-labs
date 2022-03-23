@@ -99,19 +99,23 @@ sys_pgaccess(void)
 
   // vmprint(myproc()->pagetable);
 
+  struct proc* p = myproc();
+  if (p == 0)
+    return -1;
+
   for (int i = 0; i < num; ++i) {
-    pte_t* pte = walk(myproc()->pagetable, page + i * PGSIZE, 0);
+    pte_t* pte = walk(p->pagetable, page + i * PGSIZE, 0);
     if (pte == 0)
       panic("sys_pgaccess: walk");
     // printf("%x\n", *pte);
     if (*pte & PTE_A) {
       buffer[i / 8] |= (1L << (i % 8));
-      *pte &= (~PTE_A);
+      *pte ^= PTE_A;
     }
   }
   // printf("end buffer: %x\n", *(int*)buffer);
 
-  return copyout(myproc()->pagetable, addr, buffer, num);
+  return copyout(p->pagetable, addr, buffer, (num + 7) / 8);
 }
 #endif
 
