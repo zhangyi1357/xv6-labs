@@ -11,7 +11,7 @@ uint64
 sys_exit(void)
 {
   int n;
-  if(argint(0, &n) < 0)
+  if (argint(0, &n) < 0)
     return -1;
   exit(n);
   return 0;  // not reached
@@ -33,7 +33,7 @@ uint64
 sys_wait(void)
 {
   uint64 p;
-  if(argaddr(0, &p) < 0)
+  if (argaddr(0, &p) < 0)
     return -1;
   return wait(p);
 }
@@ -44,11 +44,11 @@ sys_sbrk(void)
   int addr;
   int n;
 
-  if(argint(0, &n) < 0)
+  if (argint(0, &n) < 0)
     return -1;
-  
+
   addr = myproc()->sz;
-  if(growproc(n) < 0)
+  if (growproc(n) < 0)
     return -1;
   return addr;
 }
@@ -60,12 +60,12 @@ sys_sleep(void)
   uint ticks0;
 
 
-  if(argint(0, &n) < 0)
+  if (argint(0, &n) < 0)
     return -1;
   acquire(&tickslock);
   ticks0 = ticks;
-  while(ticks - ticks0 < n){
-    if(myproc()->killed){
+  while (ticks - ticks0 < n) {
+    if (myproc()->killed) {
       release(&tickslock);
       return -1;
     }
@@ -80,8 +80,38 @@ sys_sleep(void)
 int
 sys_pgaccess(void)
 {
-  // lab pgtbl: your code here.
-  return 0;
+  // get the parameters 
+  uint64 page, addr;
+  int num;
+  if (argaddr(0, &page) < 0 ||
+    argint(1, &num) < 0 ||
+    argaddr(2, &addr) < 0)
+    return -1;
+
+
+  // check at most 512 * 8 pages
+  if (num > 512 * 8)
+    return num = 512 * 8;
+  char buffer[512];
+  memset(buffer, 0, sizeof(char) * 512);
+
+  // printf("initial buffer: %x\n", *(int*)buffer);
+
+  // vmprint(myproc()->pagetable);
+
+  for (int i = 0; i < num; ++i) {
+    pte_t* pte = walk(myproc()->pagetable, page + i * PGSIZE, 0);
+    if (pte == 0)
+      panic("sys_pgaccess: walk");
+    // printf("%x\n", *pte);
+    if (*pte & PTE_A) {
+      buffer[i / 8] |= (1L << (i % 8));
+      *pte &= (~PTE_A);
+    }
+  }
+  // printf("end buffer: %x\n", *(int*)buffer);
+
+  return copyout(myproc()->pagetable, addr, buffer, num);
 }
 #endif
 
@@ -90,7 +120,7 @@ sys_kill(void)
 {
   int pid;
 
-  if(argint(0, &pid) < 0)
+  if (argint(0, &pid) < 0)
     return -1;
   return kill(pid);
 }
